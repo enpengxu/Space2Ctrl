@@ -27,6 +27,12 @@
 
 using namespace std;
 
+struct sync_s {
+	pthread_mutex_t mux;
+	pthread_cond_t cond;
+};
+void * thread_func(void *);
+
 struct CallbackClosure {
   Display *ctrlDisplay;
   Display *dataDisplay;
@@ -156,13 +162,11 @@ class Space2Ctrl {
           modifier_down = true;
 
         } else { // another key pressed
-          // cout << "    Another" << endl;
-          if (space_down) {
-            key_combo = true;
-          } else {
-            key_combo = false;
-          }
-
+			if (space_down) {
+				key_combo = true;
+			} else {
+				key_combo = false;
+			}
         }
 
         break;
@@ -177,10 +181,10 @@ class Space2Ctrl {
           if (!key_combo && !modifier_down) {
             // cout << "    (!key_combo && !modifier_down)";
             gettimeofday(&endWait, NULL);
-            if ( diff_ms(endWait, startWait) < 600 ) {
+            if (diff_ms(endWait, startWait) < 800 ) {
               // if minimum timeout elapsed since space was pressed
-              XTestFakeKeyEvent(userData->ctrlDisplay, 255, True, CurrentTime);
-              XTestFakeKeyEvent(userData->ctrlDisplay, 255, False, CurrentTime);
+				XTestFakeKeyEvent(userData->ctrlDisplay, 255, True, CurrentTime);
+				XTestFakeKeyEvent(userData->ctrlDisplay, 255, False,CurrentTime);
             }
           }
           key_combo = false;
@@ -254,6 +258,7 @@ public:
     XTestFakeKeyEvent(userData.ctrlDisplay, 255, True, CurrentTime);
     XTestFakeKeyEvent(userData.ctrlDisplay, 255, False, CurrentTime);
 
+	pthread_create(&tid, NULL, thread_func, NULL);
     if (!XRecordEnableContext(userData.dataDisplay, recContext, eventCallback,
                               (XPointer) &userData)) {
       throw exception();
@@ -290,4 +295,10 @@ int main() {
     space2ctrl->start();
   }
   return 0;
+}
+
+
+void * thread_func(void *param)
+{
+	
 }
